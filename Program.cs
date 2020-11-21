@@ -11,7 +11,9 @@ namespace OOP_Laba13 {
 			new Action(DirInfo),
 			new Action(FilesAndDirsOfDrive),
 			new Action(FilesWithExtension),
-			new Action(Logs)
+			new Action(Logs),
+			new Action(NavLogs),
+			new Action(ClearLogs)
 		};
 
 		static void Main() {
@@ -23,7 +25,9 @@ namespace OOP_Laba13 {
 						"\n3 - папка" +
 						"\n4 - файлы и директории диска" +
 						"\n5 - файлы с расширением" +
-						"\n6 - Просмотреть логи" +
+						"\n6 - просмотреть логи" +
+						"\n7 - просмотреть логи за день/период/по ключевому слову" +
+						"\n8 - почистить логи" +
 						"\n0 - выход" +
 						"\nВыберите действие: "
 						);
@@ -121,7 +125,6 @@ namespace OOP_Laba13 {
 			Console.WriteLine("Всё считано и записано");
 		}
 
-		// TODO: Сделать фильтрацию записей лога
 		static void Logs() {
 			var logs = OKVLog.GetLogs();
 			if (logs.Count == 0) {
@@ -130,13 +133,58 @@ namespace OOP_Laba13 {
 			}
 			Console.WriteLine($"\n{logs.Count} записей с {logs[0].Time:G}\n");
 			foreach (var item in logs) {
-				Console.WriteLine($"\n{item.Type, -7} | {item.Time:G} | {item.Msg}");
+				Console.WriteLine($"\n{item.Type,-7} | {item.Time:G} | {item.Msg}");
 				if (item.InnerMsg != "")
 					Console.WriteLine("\t" + item.InnerMsg);
 				if (item.StackTrace.Count != 0)
 					foreach (var stackItem in item.StackTrace)
 						Console.WriteLine("\t" + stackItem);
 			}
+		}
+
+		static void NavLogs() {
+			Console.Write(
+				"Выбрать определённые логи за" +
+				"\nа) определённый день - \"дд.мм.гггг\"" +
+				"\nб) промежуток времени - \"дд.мм.гггг чч:мм дд.мм.гггг чч:мм\"" +
+				"\nв) по ключевому слову" +
+				"\nВведите строку для поиска: "
+				);
+			string str = Console.ReadLine();
+			string[] splitted = str.Split(' ');
+			List<LogItem> logs;
+			logs = OKVLog.GetSomeLogs(str);
+			switch (splitted.Length) {
+				case 1:
+					if (DateTime.TryParse(str, out DateTime res))
+						logs = OKVLog.GetSomeLogs(res);
+					break;
+				case 4:
+					string strDate1 = $"{splitted[0]} {splitted[1]}";
+					string strDate2 = $"{splitted[2]} {splitted[3]}";
+					if (DateTime.TryParse(strDate1, out DateTime date1) &&
+						DateTime.TryParse(strDate2, out DateTime date2))
+						logs = OKVLog.GetSomeLogs(date1, date2);
+					break;
+				default:
+					break;
+			}
+			if (logs.Count == 0)
+				Console.WriteLine("Записей не найдено");
+			else
+				foreach (var item in logs) {
+					Console.WriteLine($"\n{item.Type,-7} | {item.Time:G} | {item.Msg}");
+					if (item.InnerMsg != "")
+						Console.WriteLine("\t" + item.InnerMsg);
+					if (item.StackTrace.Count != 0)
+						foreach (var stackItem in item.StackTrace)
+							Console.WriteLine("\t" + stackItem);
+				}
+		}
+
+		static void ClearLogs() {
+			int res = OKVLog.ClearLogs();
+			Console.WriteLine($"Удалено {res} записей");
 		}
 	}
 }

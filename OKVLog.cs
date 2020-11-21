@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace OOP_Laba13 {
 	static class OKVLog {
@@ -27,6 +28,7 @@ namespace OOP_Laba13 {
 			}
 		}
 
+		// Получение всех записей
 		public static List<LogItem> GetLogs() {
 			using var sr = new StreamReader(File);
 			var logs = new List<LogItem>();
@@ -68,7 +70,50 @@ namespace OOP_Laba13 {
 					}
 				}
 			}
+			logs.Add(new LogItem(type, time, msg, innerMsg, stackTrace));
 			return logs;
+		}
+
+		// Выборка определённых записей
+		public static List<LogItem> GetSomeLogs(DateTime day) =>
+			GetLogs().Where(item => $"{item.Time:d}" == $"{day:d}").ToList();
+
+
+		public static List<LogItem> GetSomeLogs(DateTime date1, DateTime date2) =>
+			GetLogs().Where(item => item.Time > date1 && item.Time < date2)
+			.ToList();
+
+		public static List<LogItem> GetSomeLogs(string keyWord) =>
+			GetLogs().Where(item =>
+				item.Type.ToString() == keyWord.ToUpper() ||
+				item.Msg.ToLower().Contains(keyWord.ToLower()))
+			.ToList();
+
+		// Очистка логов
+		public static int ClearLogs() {
+			var logs = GetLogs();
+			int counter = 0;
+			foreach (var item in logs) {
+				if (DateTime.Now - item.Time < new TimeSpan(1, 0, 0)) {
+					LogLogItem(item);
+					counter++;
+				}
+			}
+			return counter;
+		}
+
+		// Запись определённой записи
+		private static void LogLogItem(LogItem item) {
+			using var sw = new StreamWriter(File, true);
+			sw.WriteLineAsync($"{item.Type}/{item.Time:G}/{item.Msg}");
+			if (item.Type == LogType.WARN)
+				sw.WriteLine("\t" + item.InnerMsg);
+			else {
+				sw.WriteLine("\t" + item.InnerMsg);
+				foreach (var stackItem in item.StackTrace) {
+					sw.WriteLineAsync(stackItem);
+				}
+			}
 		}
 	}
 
